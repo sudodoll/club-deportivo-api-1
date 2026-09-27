@@ -4,11 +4,11 @@ info:
   description: |
     API REST para gestionar canchas, socios y reservas del Club Deportivo Encuentro.
 
-    El contrato sigue el enunciado del trabajo práctico. La URL base puede variar
-    según el despliegue (por ejemplo, `/api` o `/v1`).
+    El contrato sigue el enunciado del trabajo práctico. Todas las rutas se
+    sirven bajo la URL base `/club_deportivo_api`.
   version: 1.0.0
 servers:
-  - url: /
+  - url: http://localhost:5000/club_deportivo_api
     description: Servidor local de desarrollo
 
 tags:
@@ -20,20 +20,21 @@ tags:
     description: Gestión de socios del club
   - name: Reservas
     description: Reservas de canchas
-  - name: Extensiones opcionales
-    description: Endpoints de la extensión opcional del enunciado
 
 paths:
   /deportes:
     get:
       summary: Listar deportes precargados
+      description: |
+        Devuelve todos los deportes cargados por el script inicial. No usa
+        paginación ni admite parámetros (cualquier parámetro responde 400).
       tags:
         - Deportes
       responses:
         '200':
           $ref: '#/components/responses/GetDeportesList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -74,7 +75,7 @@ paths:
               $ref: '#/components/schemas/CanchaCreate'
       responses:
         '201':
-          $ref: '#/components/responses/Created'
+          $ref: '#/components/responses/CanchaCreated'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -92,6 +93,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetCancha200'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -125,6 +128,8 @@ paths:
       responses:
         '204':
           $ref: '#/components/responses/NoContent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -151,8 +156,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetCanchasList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -174,8 +177,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetSociosList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -192,7 +193,7 @@ paths:
               $ref: '#/components/schemas/SocioCreate'
       responses:
         '201':
-          $ref: '#/components/responses/Created'
+          $ref: '#/components/responses/SocioCreated'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -210,6 +211,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetSocio200'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -225,8 +228,8 @@ paths:
             schema:
               $ref: '#/components/schemas/SocioUpdate'
       responses:
-        '204':
-          $ref: '#/components/responses/NoContent'
+        '200':
+          $ref: '#/components/responses/GetSocio200'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -255,8 +258,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetReservasList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -277,7 +278,7 @@ paths:
               $ref: '#/components/schemas/ReservaCreate'
       responses:
         '201':
-          $ref: '#/components/responses/Created'
+          $ref: '#/components/responses/ReservaCreated'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -297,6 +298,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetReserva200'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -308,9 +311,12 @@ paths:
     put:
       summary: Establecer el estado de una reserva
       description: |
-        Cambia el estado de una reserva respetando las transiciones permitidas
-        y las restricciones temporales. Repetir el estado actual devuelve éxito
-        sin modificar la reserva.
+        Cambia el estado de una reserva y devuelve la reserva con su estado actual.
+        - `confirmada` → `cancelada`: solo si el horario de inicio todavía no llegó.
+        - `confirmada` → `finalizada`: solo si se alcanzó o superó el horario de fin.
+        - Una reserva `cancelada` o `finalizada` no puede cambiar de estado (409).
+        - Repetir el estado actual devuelve 200 sin modificar la reserva.
+        - Un estado desconocido responde 400.
       tags:
         - Reservas
       requestBody:
@@ -320,53 +326,8 @@ paths:
             schema:
               $ref: '#/components/schemas/EstadoReserva'
       responses:
-        '204':
-          $ref: '#/components/responses/NoContent'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /bloqueos:
-    get:
-      summary: Listar bloqueos de mantenimiento
-      description: Extensión opcional. Listado paginado de bloqueos.
-      tags:
-        - Extensiones opcionales
-      parameters:
-        - $ref: '#/components/parameters/IdCanchaFilter'
-        - $ref: '#/components/parameters/FechaBloqueoFilter'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Offset'
-      responses:
         '200':
-          $ref: '#/components/responses/GetBloqueosList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-    post:
-      summary: Crear un bloqueo de mantenimiento
-      description: |
-        Extensión opcional. Crea un bloqueo que impide reservar una cancha en
-        el intervalo indicado.
-      tags:
-        - Extensiones opcionales
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BloqueoCreate'
-      responses:
-        '201':
-          $ref: '#/components/responses/Created'
+          $ref: '#/components/responses/GetReserva200'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -375,50 +336,6 @@ paths:
           $ref: '#/components/responses/Conflict'
         '500':
           $ref: '#/components/responses/InternalServerError'
-
-  /bloqueos/{id}:
-    parameters:
-      - $ref: '#/components/parameters/Id'
-    delete:
-      summary: Eliminar un bloqueo de mantenimiento
-      description: Extensión opcional. Quita la restricción del bloqueo.
-      tags:
-        - Extensiones opcionales
-      responses:
-        '204':
-          $ref: '#/components/responses/NoContent'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /reservas/recurrentes:
-    post:
-      summary: Crear reservas recurrentes
-      description: |
-        Extensión opcional. Crea una serie de reservas semanales. Si alguna de
-        las fechas no está disponible, no se guarda ninguna y se devuelve 409
-        con el listado de fechas en conflicto.
-      tags:
-        - Extensiones opcionales
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReservaRecurrenteCreate'
-      responses:
-        '201':
-          $ref: '#/components/responses/Created'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/ReservasRecurrentesConflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
 components:
   schemas:
     Deporte:
@@ -463,6 +380,7 @@ components:
 
     CanchaCreate:
       type: object
+      additionalProperties: false
       required:
         - nombre
         - id_deporte
@@ -494,6 +412,8 @@ components:
 
     CanchaUpdate:
       type: object
+      additionalProperties: false
+      minProperties: 1
       properties:
         nombre:
           type: string
@@ -536,31 +456,38 @@ components:
 
     SocioCreate:
       type: object
+      additionalProperties: false
       required:
         - nombre
         - email
       properties:
         nombre:
           type: string
-          description: Nombre completo del socio
+          maxLength: 60
+          description: Nombre completo del socio (se guardan sin espacios en los extremos)
           example: "Juan Pérez"
         email:
           type: string
           format: email
-          description: Correo electrónico del socio
+          maxLength: 80
+          description: Correo electrónico del socio (se guarda en minúsculas y sin espacios en los extremos)
           example: "juan.perez@example.com"
 
     SocioUpdate:
       type: object
+      additionalProperties: false
+      minProperties: 1
       properties:
         nombre:
           type: string
-          description: Nombre completo del socio
+          maxLength: 60
+          description: Nombre completo del socio (se guardan sin espacios en los extremos)
           example: "Juan Pérez"
         email:
           type: string
           format: email
-          description: Correo electrónico del socio
+          maxLength: 80
+          description: Correo electrónico del socio (se guarda en minúsculas y sin espacios en los extremos)
           example: "juan.perez@example.com"
         activo:
           type: boolean
@@ -613,6 +540,7 @@ components:
 
     ReservaCreate:
       type: object
+      additionalProperties: false
       required:
         - id_socio
         - id_cancha
@@ -642,6 +570,7 @@ components:
 
     EstadoReserva:
       type: object
+      additionalProperties: false
       required:
         - estado
       properties:
@@ -653,106 +582,6 @@ components:
             - cancelada
             - finalizada
           example: "cancelada"
-
-    Bloqueo:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Identificador único del bloqueo
-          example: 1
-        id_cancha:
-          type: integer
-          description: Identificador de la cancha bloqueada
-          example: 2
-        fecha:
-          type: string
-          format: date
-          description: Día del bloqueo
-          example: "2026-10-20"
-        hora_inicio:
-          type: string
-          description: Hora de inicio del bloqueo
-          pattern: '^([01]\d|2[0-3]):00:00$'
-          example: "08:00:00"
-        hora_fin:
-          type: string
-          description: Hora de fin del bloqueo
-          pattern: '^([01]\d|2[0-3]):00:00$'
-          example: "12:00:00"
-        motivo:
-          type: string
-          description: Motivo del bloqueo
-          example: "Mantenimiento de iluminación"
-
-    BloqueoCreate:
-      type: object
-      required:
-        - id_cancha
-        - fecha
-        - hora_inicio
-        - hora_fin
-        - motivo
-      properties:
-        id_cancha:
-          type: integer
-          description: Identificador de la cancha a bloquear
-          example: 2
-        fecha:
-          type: string
-          format: date
-          description: Día del bloqueo
-          example: "2026-10-20"
-        hora_inicio:
-          type: string
-          description: Hora de inicio del bloqueo
-          pattern: '^([01]\d|2[0-3]):00:00$'
-          example: "08:00:00"
-        hora_fin:
-          type: string
-          description: Hora de fin del bloqueo
-          pattern: '^([01]\d|2[0-3]):00:00$'
-          example: "12:00:00"
-        motivo:
-          type: string
-          description: Motivo del bloqueo
-          example: "Mantenimiento de iluminación"
-
-    ReservaRecurrenteCreate:
-      type: object
-      required:
-        - id_socio
-        - id_cancha
-        - fecha_hora_inicio
-        - fecha_hora_fin
-        - cantidad_semanas
-      properties:
-        id_socio:
-          type: integer
-          description: Identificador del socio responsable
-          example: 1
-        id_cancha:
-          type: integer
-          description: Identificador de la cancha reservada
-          example: 2
-        fecha_hora_inicio:
-          type: string
-          format: date-time
-          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}-03:00$'
-          description: Inicio del intervalo de la primera reserva en GMT-3 con 6 decimales de precisión
-          example: "2026-10-15T18:00:00.000000-03:00"
-        fecha_hora_fin:
-          type: string
-          format: date-time
-          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}-03:00$'
-          description: Fin del intervalo de la primera reserva en GMT-3 con 6 decimales de precisión
-          example: "2026-10-15T20:00:00.000000-03:00"
-        cantidad_semanas:
-          type: integer
-          description: Cantidad de semanas de la serie, incluyendo la primera
-          minimum: 2
-          maximum: 12
-          example: 4
 
     Links:
       type: object
@@ -808,21 +637,6 @@ components:
           items:
             $ref: '#/components/schemas/Error'
 
-    ErroresConConflictos:
-      allOf:
-        - $ref: '#/components/schemas/Errores'
-        - type: object
-          properties:
-            conflictos:
-              type: array
-              description: Fechas que presentan conflictos en la serie de reservas
-              items:
-                type: string
-                format: date
-              example:
-                - "2026-10-22"
-                - "2026-11-05"
-
     DeportesListResponse:
       type: object
       properties:
@@ -858,16 +672,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Reserva'
-        _links:
-          $ref: '#/components/schemas/Links'
-
-    BloqueosListResponse:
-      type: object
-      properties:
-        bloqueos:
-          type: array
-          items:
-            $ref: '#/components/schemas/Bloqueo'
         _links:
           $ref: '#/components/schemas/Links'
 
@@ -1018,15 +822,6 @@ components:
         pattern: '^([01]\d|2[0-3]):00:00$'
       example: "20:00:00"
 
-    FechaBloqueoFilter:
-      name: fecha
-      in: query
-      description: Filtrar bloqueos por día
-      schema:
-        type: string
-        format: date
-      example: "2026-10-20"
-
   responses:
     GetDeportesList200:
       description: OK
@@ -1077,22 +872,40 @@ components:
           schema:
             $ref: '#/components/schemas/Reserva'
 
-    GetBloqueosList200:
-      description: OK
+    CanchaCreated:
+      description: Cancha creada. El cuerpo es vacío; la URL de la cancha viene en el header Location.
+      headers:
+        Location:
+          description: URL de la cancha creada
+          schema:
+            type: string
+            example: "http://localhost:5000/club_deportivo_api/canchas/7"
+
+    SocioCreated:
+      description: Socio creado. Se devuelve el socio con el id asignado y activo en true.
+      headers:
+        Location:
+          description: URL del socio creado
+          schema:
+            type: string
+            example: "http://localhost:5000/club_deportivo_api/socios/3"
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BloqueosListResponse'
+            $ref: '#/components/schemas/Socio'
 
-    Created:
-      description: Creado
-
-    ReservasRecurrentesConflict:
-      description: Conflicto en la serie de reservas
+    ReservaCreated:
+      description: Reserva creada en estado confirmada, con la tarifa vigente y el total calculado.
+      headers:
+        Location:
+          description: URL de la reserva creada
+          schema:
+            type: string
+            example: "http://localhost:5000/club_deportivo_api/reservas/5"
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErroresConConflictos'
+            $ref: '#/components/schemas/Reserva'
 
     BadRequest:
       description: Solicitud inválida
