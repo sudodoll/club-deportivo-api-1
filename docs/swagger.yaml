@@ -57,8 +57,6 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GetCanchasList200'
-        '204':
-          $ref: '#/components/responses/NoContent'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -110,8 +108,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CanchaUpdate'
       responses:
-        '204':
-          $ref: '#/components/responses/NoContent'
+        '200':
+          $ref: '#/components/responses/GetCancha200'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':

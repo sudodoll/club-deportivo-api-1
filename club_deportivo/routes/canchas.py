@@ -1,13 +1,16 @@
+import logging
 from flask import Blueprint, jsonify, request
 
 from ..constants import ERROR_CODE_INVALID_BODY, ERROR_CODE_CANCHA_NOT_FOUND
-from ..utils import construir_error_api, construir_links_paginacion
+from ..utils import construir_error_api, construir_links_paginacion, ERROR_CODE_INTERNO
 from ..validators.canchas import (
     validar_id_cancha,
     validar_filtros_canchas,
     validar_parametros_disponibilidad,
 )
 from ..services import canchas as canchas_service
+
+logger = logging.getLogger(__name__)
 
 canchas_bp = Blueprint('canchas', __name__)
 
@@ -67,9 +70,6 @@ def get_canchas():
 
     canchas, total = canchas_service.listar_canchas(filtros, limit, offset)
 
-    if not canchas:
-        return '', 200
-
     return _respuesta_listado(canchas, _filtros_de_query(), limit, offset, total)
 
 
@@ -118,13 +118,13 @@ def patch_cancha(id):
         return _error_body_invalido()
 
     try:
-        canchas_service.actualizar_cancha_parcial(id_cancha, body)
+        cancha = canchas_service.actualizar_cancha_parcial(id_cancha, body)
     except ValueError as e:
         status = e.args[1] if len(e.args) > 1 else 400
 
         return jsonify(e.args[0]), status
 
-    return '', 200
+    return jsonify(cancha), 200
 
 
 @canchas_bp.route('/canchas/<id>', methods=['DELETE'])
@@ -143,15 +143,14 @@ def delete_cancha(id):
 
     return '', 204
 
+
 @canchas_bp.errorhandler(Exception)
 def manejar_error_inesperado(error):
     """Responde en JSON cualquier error no previsto de estos endpoints."""
     logger.exception(f'Error inesperado en canchas: {error}')
- 
+
     return jsonify(construir_error_api(
         code=ERROR_CODE_INTERNO,
         message='Error interno del servidor',
         description='Ocurrio un error inesperado al procesar la solicitud'
     )), 500
-
-
