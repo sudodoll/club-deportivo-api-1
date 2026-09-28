@@ -68,7 +68,7 @@ def get_canchas():
     canchas, total = canchas_service.listar_canchas(filtros, limit, offset)
 
     if not canchas:
-        return '', 204
+        return '', 200
 
     return _respuesta_listado(canchas, _filtros_de_query(), limit, offset, total)
 
@@ -124,7 +124,7 @@ def patch_cancha(id):
 
         return jsonify(e.args[0]), status
 
-    return '', 204
+    return '', 200
 
 
 @canchas_bp.route('/canchas/<id>', methods=['DELETE'])
