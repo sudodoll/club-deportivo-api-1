@@ -143,3 +143,15 @@ def delete_cancha(id):
 
     return '', 204
 
+@canchas_bp.errorhandler(Exception)
+def manejar_error_inesperado(error):
+    """Responde en JSON cualquier error no previsto de estos endpoints."""
+    logger.exception(f'Error inesperado en canchas: {error}')
+ 
+    return jsonify(construir_error_api(
+        code=ERROR_CODE_INTERNO,
+        message='Error interno del servidor',
+        description='Ocurrio un error inesperado al procesar la solicitud'
+    )), 500
+
+
