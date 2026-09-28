@@ -4,7 +4,6 @@ API REST en Python y Flask para gestionar las canchas, los socios y las reservas
 
 ## Integrantes
 
-| Nombre y apellido, Padrón, Usuario de GitHub |
 Contreras Franco Leandro, 116585, imthegarbage
 Nieto Valentina, 109046, sudodoll
 
