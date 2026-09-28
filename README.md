@@ -5,7 +5,9 @@ API REST en Python y Flask para gestionar las canchas, los socios y las reservas
 ## Integrantes
 
 Contreras Franco Leandro, 116585, imthegarbage.
+
 Nieto Valentina, 109046, sudodoll
+
 Galizio Nicolás, 116617, beto-NG
 
 
